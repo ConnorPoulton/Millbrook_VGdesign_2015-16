@@ -16,9 +16,12 @@ public class GruntAI : MonoBehaviour {
 
 	void Start ()
     {
+        try
+        { NavMeshAgent agent = GetComponent<NavMeshAgent>(); }
+        catch
+        { Debug.Log(this.name.ToString() + " has no NavMeshAgent componenet"); }
 
-        //NavMeshAgent agent = GetComponent<NavMeshAgent>();
-        //TODO develop a way to retrieve the Nav Mesh componenet for the current level
+        
         //TODO develop a way to associate WaitAtNode instructions with nodes (time to wait, direction to turn)
 
         if (nodes.Length == 0) //if no nodes are attached to the Grunt, set the current position as a node so it can pathfind back to its starting position
@@ -41,6 +44,7 @@ public class GruntAI : MonoBehaviour {
 
         }
 
+        this.transform.position = nodeTransforms[0].position;
 	}
 
     //call in the termination statement of an IEnumerator coroutine
