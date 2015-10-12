@@ -11,7 +11,6 @@ public class GruntAI : MonoBehaviour {
    private int CurrentNode = 0;
    private Transform CurrentNodeTransform;
    private int NodeTransformsMax; //stores last element in list, used to loop back to start of patrol
-
     //state machine variables
     private enum States {PathToNextNode, WaitAtNode, InvestigateNoise, ReturnToPatrol, FoundPlayer};
     private States currentstate;
@@ -23,10 +22,10 @@ public class GruntAI : MonoBehaviour {
 
 	void Start ()
     {
-        try
-        { NavMeshAgent agent = GetComponent<NavMeshAgent>(); }
-        catch
-        { Debug.Log(this.name.ToString() + " has no NavMeshAgent componenet"); }
+        NavMeshAgent agent = GetComponent<NavMeshAgent>();
+        if (agent == null)
+        { Debug.Log(this.name.ToString() + " has no NavMeshAgent"); }
+        
 
         
         //TODO develop a way to associate WaitAtNode instructions with nodes (time to wait, direction to turn)
@@ -36,14 +35,16 @@ public class GruntAI : MonoBehaviour {
             NodeTransforms.Add(this.transform);
         }else {
 
-            foreach (int node in Nodes)
+            for (int node = 0; node <= Nodes.Length - 1; node++ )
             {
-                Debug.Log(node.ToString());
+               
+            
                 string nodeName = "node" + Nodes[node].ToString();
                
                 GameObject currentNode = GameObject.Find(nodeName);
+               
                 try
-                { NodeTransforms.Add(currentNode.transform); }
+                { Debug.Log(nodeName);  NodeTransforms.Add(currentNode.transform); }
                 catch
                 { Debug.Log("You have mislabled node" + Nodes[node].ToString() + " in enemy " + this.name);  break; }
 
