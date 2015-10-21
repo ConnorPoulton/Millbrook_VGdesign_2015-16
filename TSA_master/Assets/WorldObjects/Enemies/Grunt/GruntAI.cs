@@ -2,32 +2,33 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
-using TSA;
+
 //written by Connor Poulton
 
 [System.Serializable] //serialize to allow compatibility in Unity editor
 public class Node
 {
-    public int node;
+    public Transform target;
     public int degreeTurn;
     public int waitTime;
 }
 
 [RequireComponent(typeof(NavMeshAgent))]
 public class GruntAI : MonoBehaviour {
+
     //navigation system values
     public List<Node> nodes; //set value in the Unity editor
-    Transform target;
-    List<Transform> NodeTransforms = new List<Transform>();
-    Vector3 destination;
 	NavMeshAgent agent;
-    int CurrentNode = 0;
+    int CurrentNode = 0; //since 1 is added each iteration, set to -1 to start at zero
     int MaxNode; //stores last element in list, used to loop back to start of patrol
     
     //state machine variables
     enum States {PathToNextNode, WaitAtNode, InvestigateNoise, ReturnToPatrol, FoundPlayer};
     States currentstate;
     States laststate = 0;
+
+    //refrence variables
+    Transform ChildTransform;
 
 
     //----------------initialization---------------------------------------
@@ -36,33 +37,19 @@ public class GruntAI : MonoBehaviour {
 	void Start ()
     {
         agent = GetComponent<NavMeshAgent>();
+        ChildTransform = this.transform.GetChild(0); //get the body of the grunt
         GameObject levelGeometry = GameObject.FindWithTag("LevelGeometry"); //make sure you only have one object in your scene with this tag!
         
-
         if (levelGeometry == null)
         { Debug.Log("please apply the LevelGeometry tag to your scenes level prefab"); }
-        
 
-        if (nodes.Count == 0) //if no nodes are attached to the Grunt, set the current position as a node so it can pathfind back to its starting position
-        {
-            NodeTransforms.Add(this.transform);
-        }else {
 
-            foreach (Node i in nodes)
-            {
-                
-                try
-                { NodeTransforms.Add(TSA.ResourceManager.NodesInScene[i.node]); }
-                catch
-                { Debug.Log("Invalid node path in enemy " + this.name); break; }
-                
-            }
-        }
+        try
+        { this.transform.position = nodes[0].target.position; }
+        catch
+        { Debug.Log(this.name + " has no nodes attached"); }
 
-        this.transform.position = NodeTransforms[0].position;
-        
-        MaxNode = NodeTransforms.Count - 1;
-        CurrentNode = 0;
+        MaxNode = nodes.Count - 1;
         
         NewState(States.WaitAtNode);
         NextState();
@@ -74,35 +61,34 @@ public class GruntAI : MonoBehaviour {
     
     private IEnumerator WaitAtNode()
     {
-        Debug.Log("enter WaitAtNode");
-        transform.Rotate(new Vector3(0,nodes[CurrentNode].degreeTurn,0) * Time.deltaTime);
+        
+        transform.Rotate(new Vector3(0,nodes[CurrentNode].degreeTurn,0) * Time.deltaTime); //may need to be called from OnPhysicsUpdate?
         yield return new WaitForSeconds(nodes[CurrentNode].waitTime); //this may cause issues with state switches called from update (IE FoundPlayer)
         if (CurrentNode == MaxNode) //probably a more eleqeunt, less error prone way to do this, a task for later no doubt
         { CurrentNode = 0; }
         else
         { CurrentNode += 1; }
-        Debug.Log("exit WaitAtNode");
+        
         NewState(States.PathToNextNode);    
         NextState();
     }
 
     private IEnumerator PathToNextNode()
     {
-        Debug.Log("enter PathToNextNode");
+       
         while (currentstate == States.PathToNextNode)
         {
-            Debug.Log(NodeTransforms[0].position);
-            target = NodeTransforms[0];
-            destination = target.position;
-            agent.destination = destination;
+            
+            agent.destination = nodes[CurrentNode].target.position;
 
-            if (this.transform.position.x == NodeTransforms[CurrentNode].position.x) //broke, local to global? probs not good method in the first place, too error prone
+            if (ChildTransform.position.x == nodes[CurrentNode].target.position.x & ChildTransform.position.z == nodes[CurrentNode].target.position.z) 
             {
+                
                 States nextstate = States.WaitAtNode; NewState(nextstate);
             }
             yield return null;
         }
-        Debug.Log("Exit PathToNextNode");
+        
         NextState();
     }
 
