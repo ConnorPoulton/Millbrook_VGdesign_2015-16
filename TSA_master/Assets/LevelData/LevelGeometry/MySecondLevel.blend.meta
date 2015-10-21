@@ -1,52 +1,25 @@
 fileFormatVersion: 2
-guid: 23d5563a858d7f549a234073f4131ec5
-timeCreated: 1444080828
+guid: 98ec1d113869fd848b517787b79cd481
+timeCreated: 1445435781
 licenseType: Free
 ModelImporter:
   serializedVersion: 18
   fileIDToRecycleName:
-    100000: Cube
-    100002: Cube_001
-    100004: Cube_002
-    100006: Cube_003
-    100008: Cylinder
-    100010: Cylinder_001
-    100012: //RootNode
-    100014: Sphere
-    100016: Sphere_001
-    400000: Cube
-    400002: Cube_001
-    400004: Cube_002
-    400006: Cube_003
-    400008: Cylinder
-    400010: Cylinder_001
-    400012: //RootNode
-    400014: Sphere
-    400016: Sphere_001
-    2300000: Cube
-    2300002: Cube_001
-    2300004: Cube_002
-    2300006: Cube_003
-    2300008: Cylinder
-    2300010: Cylinder_001
-    2300012: Sphere
-    2300014: Sphere_001
-    3300000: Cube
-    3300002: Cube_001
-    3300004: Cube_002
-    3300006: Cube_003
-    3300008: Cylinder
-    3300010: Cylinder_001
-    3300012: Sphere
-    3300014: Sphere_001
-    4300000: Cube_003
-    4300002: Cube_002
-    4300004: Cube_001
-    4300006: Sphere_001
-    4300008: Sphere
-    4300010: Cylinder_001
-    4300012: Cylinder
-    4300014: Cube
+    100000: LevelGeometry
+    100002: //RootNode
+    100004: node0
+    100006: node1
+    100008: node2
+    100010: node3
+    400000: LevelGeometry
+    400002: //RootNode
+    400004: node0
+    400006: node1
+    400008: node2
+    400010: node3
+    2300000: LevelGeometry
+    3300000: LevelGeometry
+    4300000: LevelGeometry
     7400000: Default Take
     9500000: //RootNode
   materials:
