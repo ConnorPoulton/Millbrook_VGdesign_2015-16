@@ -17,11 +17,13 @@ public class Node
 public class GruntAI : MonoBehaviour {
     //navigation system values
     public List<Node> nodes; //set value in the Unity editor
-    NavMeshAgent agent;
+    Transform target;
     List<Transform> NodeTransforms = new List<Transform>();
+    Vector3 destination;
+	NavMeshAgent agent;
     int CurrentNode = 0;
     int MaxNode; //stores last element in list, used to loop back to start of patrol
-    Vector3 destination;
+    
     //state machine variables
     enum States {PathToNextNode, WaitAtNode, InvestigateNoise, ReturnToPatrol, FoundPlayer};
     States currentstate;
@@ -33,9 +35,9 @@ public class GruntAI : MonoBehaviour {
 
 	void Start ()
     {
-        NavMeshAgent agent = GetComponent<NavMeshAgent>();
+        agent = GetComponent<NavMeshAgent>();
         GameObject levelGeometry = GameObject.FindWithTag("LevelGeometry"); //make sure you only have one object in your scene with this tag!
-        destination = agent.destination;
+        
 
         if (levelGeometry == null)
         { Debug.Log("please apply the LevelGeometry tag to your scenes level prefab"); }
@@ -48,18 +50,13 @@ public class GruntAI : MonoBehaviour {
 
             foreach (Node i in nodes)
             {
-                NodeTransforms.Add(TSA.ResourceManager.NodesInScene[i.node]);
+                
                 try
                 { NodeTransforms.Add(TSA.ResourceManager.NodesInScene[i.node]); }
                 catch
                 { Debug.Log("Invalid node path in enemy " + this.name); break; }
                 
             }
-
-            
-               
-                
-
         }
 
         this.transform.position = NodeTransforms[0].position;
@@ -78,7 +75,7 @@ public class GruntAI : MonoBehaviour {
     private IEnumerator WaitAtNode()
     {
         Debug.Log("enter WaitAtNode");
-        transform.Rotate(new Vector3(0,nodes[CurrentNode].degreeTurn * Time.deltaTime,0) * Time.deltaTime);
+        transform.Rotate(new Vector3(0,nodes[CurrentNode].degreeTurn,0) * Time.deltaTime);
         yield return new WaitForSeconds(nodes[CurrentNode].waitTime); //this may cause issues with state switches called from update (IE FoundPlayer)
         if (CurrentNode == MaxNode) //probably a more eleqeunt, less error prone way to do this, a task for later no doubt
         { CurrentNode = 0; }
@@ -94,9 +91,12 @@ public class GruntAI : MonoBehaviour {
         Debug.Log("enter PathToNextNode");
         while (currentstate == States.PathToNextNode)
         {
-            destination = NodeTransforms[CurrentNode].position;
+            Debug.Log(NodeTransforms[0].position);
+            target = NodeTransforms[0];
+            destination = target.position;
             agent.destination = destination;
-            if (this.transform.position == NodeTransforms[CurrentNode].position)
+
+            if (this.transform.position.x == NodeTransforms[CurrentNode].position.x) //broke, local to global? probs not good method in the first place, too error prone
             {
                 States nextstate = States.WaitAtNode; NewState(nextstate);
             }
@@ -106,10 +106,7 @@ public class GruntAI : MonoBehaviour {
         NextState();
     }
 
-    void Update()
-    {
-        agent.SetDestination(NodeTransforms[CurrentNode].position);
-    }
+   
 
 
 

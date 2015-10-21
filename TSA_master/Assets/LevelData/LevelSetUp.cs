@@ -7,6 +7,7 @@ public class LevelSetUp : MonoBehaviour {
 
     void Start()
     {
+        TSA.ResourceManager.ClearList();
         for (int i = 0; i <= this.transform.childCount; i++)
         {
             nodeName = ("node" + i);
