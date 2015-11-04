@@ -59,12 +59,32 @@ public class GruntAI : MonoBehaviour {
 
     //----------------------AI states------------------------------------------------------
     
+    //----------WaitAtNode
+    
     private IEnumerator WaitAtNode()
     {
-        
-        transform.Rotate(new Vector3(0,nodes[CurrentNode].degreeTurn,0) * Time.deltaTime); //may need to be called from OnPhysicsUpdate?
-        yield return new WaitForSeconds(nodes[CurrentNode].waitTime); //this may cause issues with state switches called from update (IE FoundPlayer)
-        if (CurrentNode == MaxNode) //probably a more eleqeunt, less error prone way to do this, a task for later no doubt
+
+        float CurrentLerpTime = 0f;
+        float time;
+
+        if (nodes[CurrentNode].degreeTurn == 1)
+        { time = 0f; }
+        else
+        {time = 1f; }
+
+        Quaternion targetRotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, nodes[CurrentNode].degreeTurn);
+
+        while (CurrentLerpTime <= time) //lerp rotation
+        {
+            CurrentLerpTime += Time.deltaTime;
+            float perc = CurrentLerpTime / time;
+            Debug.Log(perc);
+            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, perc);
+        }
+
+        yield return new WaitForSeconds(nodes[CurrentNode].waitTime); 
+
+        if (CurrentNode == MaxNode)
         { CurrentNode = 0; }
         else
         { CurrentNode += 1; }
@@ -72,6 +92,8 @@ public class GruntAI : MonoBehaviour {
         NewState(States.PathToNextNode);    
         NextState();
     }
+
+    //------------PathToNextNode
 
     private IEnumerator PathToNextNode()
     {
@@ -92,8 +114,25 @@ public class GruntAI : MonoBehaviour {
         NextState();
     }
 
-   
 
+    //---------------coroutines-----------------------------------------------------
+
+    public IEnumerator RotateGrunt()
+    {
+        float CurrentLerpTime = 0f;
+        float time = 1f;
+        Quaternion targetRotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, nodes[CurrentNode].degreeTurn);
+        while (CurrentLerpTime <= time)
+        {
+            CurrentLerpTime += Time.deltaTime;
+            float perc = CurrentLerpTime / time;
+            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, perc);
+        }
+        yield return null;  
+    }
+
+
+    
 
 
     //---------------state machine functions-----------------------------------------
