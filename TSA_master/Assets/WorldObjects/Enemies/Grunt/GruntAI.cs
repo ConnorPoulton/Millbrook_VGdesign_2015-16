@@ -63,26 +63,10 @@ public class GruntAI : MonoBehaviour {
     
     private IEnumerator WaitAtNode()
     {
-
-        float CurrentLerpTime = 0f;
-        float time;
-
-        if (nodes[CurrentNode].degreeTurn == 1)
-        { time = 0f; }
-        else
-        {time = 1f; }
-
-        Quaternion targetRotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, nodes[CurrentNode].degreeTurn);
-
-        while (CurrentLerpTime <= time) //lerp rotation
-        {
-            CurrentLerpTime += Time.deltaTime;
-            float perc = CurrentLerpTime / time;
-            Debug.Log(perc);
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, perc);
-        }
-
-        yield return new WaitForSeconds(nodes[CurrentNode].waitTime); 
+        
+        StartCoroutine(RotateGrunt(nodes[CurrentNode].degreeTurn));
+        yield return new WaitForSeconds(nodes[CurrentNode].waitTime + );
+        StopCoroutine(RotateGrunt(nodes[CurrentNode].degreeTurn));
 
         if (CurrentNode == MaxNode)
         { CurrentNode = 0; }
@@ -91,6 +75,8 @@ public class GruntAI : MonoBehaviour {
         
         NewState(States.PathToNextNode);    
         NextState();
+
+        yield return null;
     }
 
     //------------PathToNextNode
@@ -117,16 +103,22 @@ public class GruntAI : MonoBehaviour {
 
     //---------------coroutines-----------------------------------------------------
 
-    public IEnumerator RotateGrunt()
+    public IEnumerator RotateGrunt(int targetRotation)
     {
-        float CurrentLerpTime = 0f;
+        Debug.Log(targetRotation);
+        if()
+        float ElapsedTime = 0f;
+        float angle;
         float time = 1f;
-        Quaternion targetRotation = Quaternion.Euler(transform.rotation.x, transform.rotation.y, nodes[CurrentNode].degreeTurn);
-        while (CurrentLerpTime <= time)
+
+        while (ElapsedTime <= time)
         {
-            CurrentLerpTime += Time.deltaTime;
-            float perc = CurrentLerpTime / time;
-            transform.rotation = Quaternion.Lerp(transform.rotation, targetRotation, perc);
+            ElapsedTime += Time.deltaTime;
+            float perc = (ElapsedTime / time);
+            angle = Mathf.LerpAngle(this.transform.rotation.y, targetRotation, perc);
+            transform.eulerAngles = new Vector3(0, angle, 0);
+            Debug.Log(transform.rotation.y);
+            yield return new WaitForEndOfFrame();
         }
         yield return null;  
     }
@@ -153,6 +145,7 @@ public class GruntAI : MonoBehaviour {
         laststate = currentstate;
         currentstate = nextstate;
     }
+
 
     /*example state coroutine
 
