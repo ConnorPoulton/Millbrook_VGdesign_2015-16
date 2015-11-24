@@ -25,7 +25,7 @@ public class GruntAI : MonoBehaviour
     float timeRotating; //used to store the exact time passed while exectuing the rotateGrunt coroutine, keeps timing consistent
 
     //state machine variables
-    enum States { PathToNextNode, WaitAtNode, InvestigateNoise, ReturnToPatrol, FoundPlayer };
+    enum States { PathToNextNode, WaitAtNode, InvestigateSound, ReturnToPatrol, FoundPlayer };
     States currentstate;
     States laststate = 0;
 
@@ -61,10 +61,13 @@ public class GruntAI : MonoBehaviour
 
     //----------------------AI states------------------------------------------------------
 
+
+
     //----------WaitAtNode
 
     private IEnumerator WaitAtNode()
     {
+        Debug.Log("waiting");
         if (nodes[CurrentNode].degreeTurn != 1)
         {
             StartCoroutine(RotateGrunt(nodes[CurrentNode].degreeTurn));
@@ -84,16 +87,16 @@ public class GruntAI : MonoBehaviour
         yield return null;
     }
 
+
+
     //------------PathToNextNode
 
     private IEnumerator PathToNextNode()
     {
-
+        Debug.Log(CurrentNode);
+        agent.destination = nodes[CurrentNode].target.position;
         while (currentstate == States.PathToNextNode)
         {
-
-            agent.destination = nodes[CurrentNode].target.position;
-
             if (ChildTransform.position.x == nodes[CurrentNode].target.position.x & ChildTransform.position.z == nodes[CurrentNode].target.position.z)
             {
 
@@ -101,8 +104,51 @@ public class GruntAI : MonoBehaviour
             }
             yield return null;
         }
-
+        Debug.Log("ran");
         NextState();
+    }
+
+
+
+    //------------InvestigateSound
+
+    private IEnumerator InvestigateSound()
+    {       
+        StartCoroutine(RotateGrunt(GetYAngleToward(agent.destination)));
+        yield return new WaitForSeconds(timeRotating + 0.5f);
+        StopCoroutine(RotateGrunt(GetYAngleToward(agent.destination)));
+
+        while (currentstate == States.InvestigateSound)
+        {
+            if (ChildTransform.position.x == agent.destination.x | ChildTransform.position.y == agent.destination.y)
+            {
+                yield return new WaitForSeconds(1);
+                StartCoroutine(RotateGrunt(GetYAngleToward(nodes[CurrentNode].target.position))); //rotate to next target
+                yield return new WaitForSeconds(timeRotating + 0.5f); //wait for rotation to finish
+                StopCoroutine(RotateGrunt(GetYAngleToward(nodes[CurrentNode].target.position)));
+
+                States nextstate = States.PathToNextNode; NewState(nextstate);
+            }
+        }
+        yield return null;
+        
+        NextState();
+    }
+
+
+
+    //---------------state machine triggers-----------------------------------------
+
+    void OnCollisionEnter(Collision col) //check to see if noise has been heard
+    {
+        Debug.Log("heard it");
+        if (col.gameObject.tag == "SoundField") //to save on processing, simply have SoundFileds spawn/despawn instead of checking for an active trigger
+        {
+            agent.destination = col.gameObject.transform.parent.position;//path to parent of SoundField
+            States nextstate = States.InvestigateSound; NewState(nextstate);
+            NextState();
+        }
+        
     }
 
 
@@ -169,7 +215,6 @@ public class GruntAI : MonoBehaviour
         return returnVale;
     }
 
-
-
+    
 }
 
