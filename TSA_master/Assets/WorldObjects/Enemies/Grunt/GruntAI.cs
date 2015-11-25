@@ -31,7 +31,7 @@ public class GruntAI : MonoBehaviour
 
     //refrence variables
     Transform ChildTransform;
-
+    private Vector3 lastPatrolPoint;
 
     //----------------initialization---------------------------------------
 
@@ -67,7 +67,7 @@ public class GruntAI : MonoBehaviour
 
     private IEnumerator WaitAtNode()
     {
-        Debug.Log("waiting");
+        
         if (nodes[CurrentNode].degreeTurn != 1)
         {
             StartCoroutine(RotateGrunt(nodes[CurrentNode].degreeTurn));
@@ -95,43 +95,71 @@ public class GruntAI : MonoBehaviour
     {
         Debug.Log(CurrentNode);
         agent.destination = nodes[CurrentNode].target.position;
+
         while (currentstate == States.PathToNextNode)
         {
-            if (ChildTransform.position.x == nodes[CurrentNode].target.position.x & ChildTransform.position.z == nodes[CurrentNode].target.position.z)
+            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
             {
 
                 States nextstate = States.WaitAtNode; NewState(nextstate);
             }
             yield return null;
         }
-        Debug.Log("ran");
+       
         NextState();
     }
 
 
 
-    //------------InvestigateSound
+    //------------ReturnToPatrol
 
-    private IEnumerator InvestigateSound()
-    {       
+    private IEnumerator ReturnToPatrol()
+    {
+        Debug.Log("return to patrol");
+        agent.destination = lastPatrolPoint;
+
         StartCoroutine(RotateGrunt(GetYAngleToward(agent.destination)));
-        yield return new WaitForSeconds(timeRotating + 0.5f);
+        yield return new WaitForSeconds(timeRotating + 1);
         StopCoroutine(RotateGrunt(GetYAngleToward(agent.destination)));
 
-        while (currentstate == States.InvestigateSound)
+        while (currentstate == States.ReturnToPatrol)
         {
-            if (ChildTransform.position.x == agent.destination.x | ChildTransform.position.y == agent.destination.y)
+            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
             {
-                yield return new WaitForSeconds(1);
-                StartCoroutine(RotateGrunt(GetYAngleToward(nodes[CurrentNode].target.position))); //rotate to next target
-                yield return new WaitForSeconds(timeRotating + 0.5f); //wait for rotation to finish
-                StopCoroutine(RotateGrunt(GetYAngleToward(nodes[CurrentNode].target.position)));
-
+                Debug.Log("end return");
                 States nextstate = States.PathToNextNode; NewState(nextstate);
             }
         }
+
         yield return null;
+        NextState();
+    }
+
+    //------------InvestigateSound
+
+    private IEnumerator InvestigateSound()
+    {
+        Vector3 targetSound = agent.destination;
+        lastPatrolPoint = this.transform.position;
+        agent.destination = lastPatrolPoint;
+        StartCoroutine(RotateGrunt(GetYAngleToward(targetSound))); 
+        yield return new WaitForSeconds(timeRotating + 1f); 
+        StopCoroutine(RotateGrunt(GetYAngleToward(targetSound)));
+        agent.destination = targetSound;
         
+        while (currentstate == States.InvestigateSound)
+        {
+            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+            {
+                yield return new WaitForSeconds(3);
+                StartCoroutine(RotateGrunt(GetYAngleToward(nodes[CurrentNode].target.position))); //rotate to next target
+                yield return new WaitForSeconds(timeRotating); 
+                StopCoroutine(RotateGrunt(GetYAngleToward(nodes[CurrentNode].target.position)));
+
+                States nextstate = States.ReturnToPatrol; NewState(nextstate);
+            }
+        }
+        yield return null;
         NextState();
     }
 
@@ -141,11 +169,11 @@ public class GruntAI : MonoBehaviour
 
     void OnCollisionEnter(Collision col) //check to see if noise has been heard
     {
-        Debug.Log("heard it");
-        if (col.gameObject.tag == "SoundField") //to save on processing, simply have SoundFileds spawn/despawn instead of checking for an active trigger
+        
+        if (col.gameObject.tag == "SoundField") //trigger InvestigateSound
         {
-            agent.destination = col.gameObject.transform.parent.position;//path to parent of SoundField
-            States nextstate = States.InvestigateSound; NewState(nextstate);
+            agent.destination = col.gameObject.transform.parent.position;
+            States nextstate = States.InvestigateSound; NewState(nextstate); //start InvestigateSound Coroutine
             NextState();
         }
         
