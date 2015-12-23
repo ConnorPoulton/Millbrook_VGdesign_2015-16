@@ -2,6 +2,7 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using TSA;
 
 //written by Connor Poulton
 
@@ -20,7 +21,7 @@ public class GruntAI : MonoBehaviour
     //navigation system values
     public List<Node> nodes; //set value in the Unity editor
     NavMeshAgent agent;
-    int CurrentNode = 0; //since 1 is added each iteration, set to -1 to start at zero
+    int CurrentNode = 0; 
     int MaxNode; //stores last element in list, used to loop back to start of patrol
     float timeRotating; //used to store the exact time passed while exectuing the rotateGrunt coroutine, keeps timing consistent
 
@@ -30,8 +31,8 @@ public class GruntAI : MonoBehaviour
     States laststate = 0;
 
     //refrence variables
-    Transform ChildTransform;
     private Vector3 lastPatrolPoint;
+    Vector3 EmptyVector = new Vector3(0,0,0); //may add to a namespace later
 
     //----------------initialization---------------------------------------
 
@@ -39,7 +40,8 @@ public class GruntAI : MonoBehaviour
     void Start()
     {
         agent = GetComponent<NavMeshAgent>();
-        ChildTransform = this.transform.GetChild(0); //get the body of the grunt
+        agent.speed = 5;
+        
         GameObject levelGeometry = GameObject.FindWithTag("LevelGeometry"); //make sure you only have one object in your scene with this tag!
 
         if (levelGeometry == null)
@@ -52,11 +54,13 @@ public class GruntAI : MonoBehaviour
         { Debug.Log(this.name + " has no nodes attached"); }
 
         MaxNode = nodes.Count - 1;
+        agent.stoppingDistance = 1;
 
         NewState(States.WaitAtNode);
         NextState();
 
     }
+
 
 
     //----------------------AI states------------------------------------------------------
@@ -93,12 +97,13 @@ public class GruntAI : MonoBehaviour
 
     private IEnumerator PathToNextNode()
     {
-        Debug.Log(CurrentNode);
+
         agent.destination = nodes[CurrentNode].target.position;
+        
 
         while (currentstate == States.PathToNextNode)
         {
-            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+            if (ArrivedAtNode())
             {
 
                 States nextstate = States.WaitAtNode; NewState(nextstate);
@@ -115,51 +120,63 @@ public class GruntAI : MonoBehaviour
 
     private IEnumerator ReturnToPatrol()
     {
-        Debug.Log("return to patrol");
-        agent.destination = lastPatrolPoint;
-
-        StartCoroutine(RotateGrunt(GetYAngleToward(agent.destination)));
+        agent.destination = this.transform.position;
+        
+        StartCoroutine(RotateGrunt(GetYAngleToward(lastPatrolPoint)));
         yield return new WaitForSeconds(timeRotating + 1);
-        StopCoroutine(RotateGrunt(GetYAngleToward(agent.destination)));
+        StopCoroutine(RotateGrunt(GetYAngleToward(lastPatrolPoint)));
+
+        agent.destination = lastPatrolPoint;
 
         while (currentstate == States.ReturnToPatrol)
         {
-            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+            if (ArrivedAtNode())
             {
-                Debug.Log("end return");
+                agent.destination = this.transform.position;
+
+                StartCoroutine(RotateGrunt(GetYAngleToward(nodes[CurrentNode].target.position)));
+                yield return new WaitForSeconds(timeRotating + 1);
+                StopCoroutine(RotateGrunt(GetYAngleToward(nodes[CurrentNode].target.position)));
+
                 States nextstate = States.PathToNextNode; NewState(nextstate);
             }
-        }
 
-        yield return null;
+            yield return null;
+        }
+                
         NextState();
     }
 
     //------------InvestigateSound
 
     private IEnumerator InvestigateSound()
-    {
-        Vector3 targetSound = agent.destination;
+    {      
         lastPatrolPoint = this.transform.position;
-        agent.destination = lastPatrolPoint;
-        StartCoroutine(RotateGrunt(GetYAngleToward(targetSound))); 
-        yield return new WaitForSeconds(timeRotating + 1f); 
-        StopCoroutine(RotateGrunt(GetYAngleToward(targetSound)));
-        agent.destination = targetSound;
-        
+        Vector3 target = agent.destination;
+        agent.destination = this.transform.position;
+
+        StartCoroutine(RotateGrunt(GetYAngleToward(target))); //rotate to next target
+        Debug.Log("wait?");
+        yield return new WaitForSeconds(timeRotating + 3);
+        Debug.Log("go");
+        StopCoroutine(RotateGrunt(GetYAngleToward(target)));
+
+        agent.destination = target;
+
         while (currentstate == States.InvestigateSound)
         {
-            if (!agent.pathPending && agent.remainingDistance <= agent.stoppingDistance)
+            if (ArrivedAtNode())
             {
-                yield return new WaitForSeconds(3);
+                
+                yield return new WaitForSeconds(2);
                 StartCoroutine(RotateGrunt(GetYAngleToward(nodes[CurrentNode].target.position))); //rotate to next target
-                yield return new WaitForSeconds(timeRotating); 
-                StopCoroutine(RotateGrunt(GetYAngleToward(nodes[CurrentNode].target.position)));
-
+                yield return new WaitForSeconds(timeRotating);
+                StopCoroutine(RotateGrunt(GetYAngleToward(nodes[CurrentNode].target.position)));                
                 States nextstate = States.ReturnToPatrol; NewState(nextstate);
             }
+            yield return null;
         }
-        yield return null;
+        
         NextState();
     }
 
@@ -167,16 +184,15 @@ public class GruntAI : MonoBehaviour
 
     //---------------state machine triggers-----------------------------------------
 
-    void OnCollisionEnter(Collision col) //check to see if noise has been heard
+    void OnTriggerEnter(Collider col)
     {
-        
-        if (col.gameObject.tag == "SoundField") //trigger InvestigateSound
+        Debug.Log("trigger");
+        if (col.gameObject.tag == "SoundField") //trigger investigate sound
         {
             agent.destination = col.gameObject.transform.parent.position;
             States nextstate = States.InvestigateSound; NewState(nextstate); //start InvestigateSound Coroutine
             NextState();
         }
-        
     }
 
 
@@ -243,6 +259,19 @@ public class GruntAI : MonoBehaviour
         return returnVale;
     }
 
-    
+    public bool ArrivedAtNode() //check to see if agent has arrived at destination and stopped calculating path
+    {
+        
+        if ( Vector3.Distance(agent.destination, agent.transform.position) <= agent.stoppingDistance)
+         {
+             if (!agent.hasPath || agent.velocity.sqrMagnitude == 0f)
+             {
+                
+                return true;
+             }
+         }
+ 
+         return false;
+    }
 }
 
