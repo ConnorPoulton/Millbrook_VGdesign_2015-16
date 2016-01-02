@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using TSA;
 
 public class PlayerStart : MonoBehaviour {
 
@@ -10,8 +11,9 @@ public class PlayerStart : MonoBehaviour {
     Quaternion CameraTargetRotation;
 
     public Transform player;
-    public RectTransform UIcanvas;
-    RectTransform canvas;
+    public RectTransform StartCanvas;
+    public RectTransform GameOverCanvas;
+    RectTransform canvas; //store refrence to instantiated canvas
     public float letterPause;
     public float TimeToLerp;
     Text title;
@@ -28,18 +30,34 @@ public class PlayerStart : MonoBehaviour {
         CameraStartRotation = Camera.main.transform.rotation;
         CameraTargetPosition = new Vector3(trans.x, trans.y + CameraStartZoom, trans.z);
         CameraTargetRotation = Quaternion.Euler(new Vector3(90,0,0));    
-        canvas = Instantiate(UIcanvas, UIcanvas.position, UIcanvas.rotation) as RectTransform;
-        //RectTransform rectTrans = canvas.GetComponent<RectTransform>();
+        canvas = Instantiate(StartCanvas, StartCanvas.position, StartCanvas.rotation) as RectTransform;
         title = canvas.GetChild(0).GetComponent<Text>();
         title.text = LevelName;
         paragraph = canvas.GetChild(1).GetComponent<Text>();
         paragraph.text = "";
-        
-       
+        //subscribe to events
+        ResourceManager.playerFound += GameOver;
+        ResourceManager.playerClearedLevel += LevelClear;
+
         StartCoroutine(TextType()); //text type triggers LerpCamera, LerpCamera spawns player when complete
     }
 
+    void OnDisable()
+    {
+        ResourceManager.playerFound -= GameOver;
+        ResourceManager.playerClearedLevel -= LevelClear;         
+    }
 
+    public void GameOver()
+    {
+        Instantiate(GameOverCanvas, GameOverCanvas.position, GameOverCanvas.rotation);
+        StartCoroutine(WaitForGameOver());
+    }
+
+    public void LevelClear()
+    {
+
+    }
 
     public IEnumerator TextType()
     {
@@ -48,14 +66,13 @@ public class PlayerStart : MonoBehaviour {
             paragraph.text += letter;
             if (Input.GetButton("Jump") == true)
             {
-                Debug.Log("break");
+
                 paragraph.text = LevelDescription;
                 break;
             }
             yield return new WaitForSeconds(letterPause);
         }
 
-        Debug.Log("end");
         yield return new WaitForSeconds(.3f);
 
         while (!Input.GetButton("Jump"))
@@ -84,5 +101,16 @@ public class PlayerStart : MonoBehaviour {
     yield return new WaitForSeconds(1);
     Instantiate(player, this.transform.position, this.transform.rotation);
     yield break;
+    }
+
+
+    public IEnumerator WaitForGameOver()
+    {
+        while (true)
+        {
+            if (Input.GetButtonDown("pause"))
+                Application.LoadLevel(Application.loadedLevel);
+            yield return null;
+        }        
     }
 }

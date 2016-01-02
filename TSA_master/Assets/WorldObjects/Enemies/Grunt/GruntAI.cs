@@ -26,13 +26,12 @@ public class GruntAI : MonoBehaviour
     float timeRotating; //used to store the exact time passed while exectuing the rotateGrunt coroutine, keeps timing consistent
 
     //state machine variables
-    enum States { PathToNextNode, WaitAtNode, InvestigateSound, ReturnToPatrol, FoundPlayer };
+    enum States { PathToNextNode, WaitAtNode, InvestigateSound, ReturnToPatrol, PlayerSeen };
     States currentstate;
     States laststate = 0;
 
     //refrence variables
     private Vector3 lastPatrolPoint;
-    Vector3 EmptyVector = new Vector3(0,0,0); //may add to a namespace later
 
     //----------------initialization---------------------------------------
 
@@ -155,10 +154,8 @@ public class GruntAI : MonoBehaviour
         Vector3 target = agent.destination;
         agent.destination = this.transform.position;
 
-        StartCoroutine(RotateGrunt(GetYAngleToward(target))); //rotate to next target
-        Debug.Log("wait?");
+        StartCoroutine(RotateGrunt(GetYAngleToward(target))); //rotate to next target        
         yield return new WaitForSeconds(timeRotating + 3);
-        Debug.Log("go");
         StopCoroutine(RotateGrunt(GetYAngleToward(target)));
 
         agent.destination = target;
@@ -180,17 +177,38 @@ public class GruntAI : MonoBehaviour
         NextState();
     }
 
+    //--------------PlayerSeen
+
+    private IEnumerator PlayerSeen()
+    {        
+        Vector3 playerPosition = agent.destination;
+        agent.destination = this.transform.position;
+        
+
+        StartCoroutine(RotateGrunt(GetYAngleToward(playerPosition)));         
+        yield return new WaitForSeconds(timeRotating);
+        StopCoroutine(RotateGrunt(GetYAngleToward(playerPosition)));
+        
+        yield break;
+    }
+
 
 
     //---------------state machine triggers-----------------------------------------
 
     void OnTriggerEnter(Collider col)
     {
-        Debug.Log("trigger");
         if (col.gameObject.tag == "SoundField") //trigger investigate sound
         {
             agent.destination = col.gameObject.transform.parent.position;
             States nextstate = States.InvestigateSound; NewState(nextstate); //start InvestigateSound Coroutine
+            NextState();
+        }
+
+        if (col.gameObject.tag == "Player")
+        {
+            agent.destination = col.gameObject.transform.position;
+            States nextState = States.PlayerSeen; NewState(nextState); //start player found coroutine
             NextState();
         }
     }
