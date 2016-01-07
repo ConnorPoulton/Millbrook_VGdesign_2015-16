@@ -32,6 +32,7 @@ public class GruntAI : MonoBehaviour
 
     //refrence variables
     private Vector3 lastPatrolPoint;
+    public RectTransform UICanvas; 
 
     //----------------initialization---------------------------------------
 
@@ -205,11 +206,25 @@ public class GruntAI : MonoBehaviour
             NextState();
         }
 
-        if (col.gameObject.tag == "Player")
+        if (col.gameObject.tag == "Player") //raycast to see if found player
         {
-            agent.destination = col.gameObject.transform.position;
-            States nextState = States.PlayerSeen; NewState(nextState); //start player found coroutine
-            NextState();
+            Vector3 origin = this.transform.position;
+            Vector3 destination = col.gameObject.transform.position;
+            Debug.Log("testing");
+            Debug.DrawLine(origin, destination, Color.red, 10, false);
+            RaycastHit hit;
+            if (Physics.Linecast(origin, destination, out hit))
+            {
+                if (hit.transform.gameObject.tag == "Player")
+                {
+                    Debug.Log(hit.transform.gameObject.name);
+                    ResourceManager.CallplayerFound(); //trigger event
+                    agent.destination = col.gameObject.transform.position;
+                    Instantiate(UICanvas, this.transform.position, UICanvas.rotation);
+                    States nextState = States.PlayerSeen; NewState(nextState); //start player found coroutine
+                    NextState();
+                }
+            }                
         }
     }
 

@@ -37,6 +37,16 @@ public class PlayerMovment : MonoBehaviour {
 
         cc = this.GetComponent<CharacterController>();
     }
+
+    void OnEnable()
+    {
+        ResourceManager.playerFound += OnPlayerFound;
+    }
+
+    void OnDisable()
+    {
+        ResourceManager.playerFound -= OnPlayerFound;
+    }
 	
 	
  
@@ -70,16 +80,15 @@ public class PlayerMovment : MonoBehaviour {
     }
 
 
-    void OnTriggerEnter(Collider col)
+    //---event functions-------------
+
+    void OnPlayerFound()
     {
-        if (col.gameObject.tag == "Lethal")
-        {
-            ResourceManager.CallplayerFound();
-            Instantiate(UICanvas, this.transform.position, UICanvas.rotation);
-            this.GetComponent<PlayerMovment>().enabled = false;
-        }            
+        this.GetComponent<PlayerMovment>().enabled = false;
     }
 
+
+    //-----functions-----------------
     void ApplyMovement()
     {
         float moveHorizontal = 0f;
