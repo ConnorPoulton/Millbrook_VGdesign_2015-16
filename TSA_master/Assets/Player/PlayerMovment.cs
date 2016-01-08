@@ -9,7 +9,8 @@ public class PlayerMovment : MonoBehaviour {
     Vector3 CameraZoomIn;
     public float p_CameraDefaultZoomY;
     Vector3 CameraDefaultZoom;
-    public float p_CameraSpeed;
+    public float p_CameraDemoSpeed;
+    public float p_CameraZoomSpeed;
     Vector3 CamTarget;
 
     public float p_SprintSpeed;
@@ -61,7 +62,6 @@ public class PlayerMovment : MonoBehaviour {
     void Update()
     {
         Vector3 camPos = Camera.main.transform.position;
-        Debug.Log(camPos);
         Vector3 trans = this.transform.position;
         CurrentSpeed = Speed + p_BaseSpeed;  
               
@@ -73,7 +73,6 @@ public class PlayerMovment : MonoBehaviour {
 
         if (PlayerControlsCamera == true && IsSprinting == false)
         {
-            Debug.Log("test");
             SetDefaultZoom(trans);
             CamTarget = CameraDefaultZoom;
         }
@@ -125,9 +124,6 @@ public class PlayerMovment : MonoBehaviour {
         else
         {
             MoveDown -= p_Gravity * Time.deltaTime;
-
-            moveHorizontal = 0;
-            moveVertical = 0;
         }
         
         Vector3 movement = new Vector3(moveHorizontal, MoveDown, moveVertical);
@@ -137,14 +133,21 @@ public class PlayerMovment : MonoBehaviour {
 
     void AdjustCamera(Vector3 camPos, Vector3 trans)
     {
-        Debug.Log(camPos);
-        Vector3 velocity = (CamTarget - camPos).normalized * (CurrentSpeed);
-        if (camPos.magnitude < CamTarget.magnitude)
-        {
-            Debug.Log("magEqual");
-            //Camera.main.transform.position += velocity;   
-        }
-        Camera.main.transform.position = new Vector3(trans.x, camPos.y += velocity.y, trans.z);
+        float camSpeed = 0;
+        float zoomSpeed = 1;
+        if (IsSprinting == false)
+            camSpeed = p_BaseSpeed;
+        if (IsSprinting == true)
+            camSpeed = p_SprintSpeed;
+        if (Mathf.RoundToInt(camPos.x) == Mathf.RoundToInt(trans.x))          
+            zoomSpeed = p_CameraZoomSpeed;
+
+        Debug.Log(camPos.x);
+        Debug.Log(trans.x);
+
+        Vector3 velocity = (CamTarget - camPos) * (camSpeed);
+        
+        Camera.main.transform.position += new Vector3(velocity.x, (velocity.y) * zoomSpeed, velocity.z);
         return;        
     }
 
@@ -171,7 +174,6 @@ public class PlayerMovment : MonoBehaviour {
         CameraDefaultZoom.y = p_CameraDefaultZoomY; 
         CameraDefaultZoom.z = trans.z;
 
-        //Camera.main.transform.position = CameraDefaultZoom;
         CamTarget = CameraDefaultZoom;
     }
 
@@ -180,10 +182,6 @@ public class PlayerMovment : MonoBehaviour {
         CameraZoomIn.x = trans.x;
         CameraZoomIn.y = p_CameraZoomInY; 
         CameraZoomIn.z = trans.z;
-
-       
-
-        //Camera.main.transform.position = CameraZoomIn;
 
         CamTarget = CameraZoomIn;
     }
