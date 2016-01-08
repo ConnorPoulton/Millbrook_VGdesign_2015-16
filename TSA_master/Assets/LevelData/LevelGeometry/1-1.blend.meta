@@ -1,40 +1,40 @@
 fileFormatVersion: 2
 guid: f2a1b121ebc001645928cf517a3332e3
-timeCreated: 1452219564
+timeCreated: 1452289039
 licenseType: Free
 ModelImporter:
   serializedVersion: 18
   fileIDToRecycleName:
     100000: //RootNode
-    100002: bounds1
-    100004: bounds2
-    100006: bounds3
-    100008: bounds4
-    100010: LevelGeometry
-    100012: node0
-    100014: node1
+    100002: LevelGeometry
+    100004: node0
+    100006: node1
+    100008: wall1
+    100010: wall2
+    100012: wall3
+    100014: wall4
     400000: //RootNode
-    400002: bounds1
-    400004: bounds2
-    400006: bounds3
-    400008: bounds4
-    400010: LevelGeometry
-    400012: node0
-    400014: node1
-    2300000: bounds1
-    2300002: bounds2
-    2300004: bounds3
-    2300006: bounds4
-    2300008: LevelGeometry
-    3300000: bounds1
-    3300002: bounds2
-    3300004: bounds3
-    3300006: bounds4
-    3300008: LevelGeometry
-    4300000: bounds2
-    4300002: bounds1
-    4300004: bounds4
-    4300006: bounds3
+    400002: LevelGeometry
+    400004: node0
+    400006: node1
+    400008: wall1
+    400010: wall2
+    400012: wall3
+    400014: wall4
+    2300000: LevelGeometry
+    2300002: wall1
+    2300004: wall2
+    2300006: wall3
+    2300008: wall4
+    3300000: LevelGeometry
+    3300002: wall1
+    3300004: wall2
+    3300006: wall3
+    3300008: wall4
+    4300000: wall2
+    4300002: wall3
+    4300004: wall4
+    4300006: wall1
     4300008: LevelGeometry
     7400000: Default Take
     9500000: //RootNode
