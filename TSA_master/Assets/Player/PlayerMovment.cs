@@ -93,10 +93,11 @@ public class PlayerMovment : MonoBehaviour {
         if (col.gameObject.tag == "CameraTrigger")
         {
             PlayerControlsCamera = false;
-            Vector3 target = col.transform.GetChild(2).transform.position;
+            Vector3 target = col.transform.parent.GetChild(1).transform.position;
             CamTarget = target;
         }
         else {
+            Debug.Log("test");
             PlayerControlsCamera = true;
         }
     }
@@ -141,9 +142,6 @@ public class PlayerMovment : MonoBehaviour {
             camSpeed = p_SprintSpeed;
         if (Mathf.RoundToInt(camPos.x) == Mathf.RoundToInt(trans.x))          
             zoomSpeed = p_CameraZoomSpeed;
-
-        Debug.Log(camPos.x);
-        Debug.Log(trans.x);
 
         Vector3 velocity = (CamTarget - camPos) * (camSpeed);
         
