@@ -4,17 +4,25 @@ using TSA;
 
 public class PlayerMovment : MonoBehaviour {
 
-    public float baseSpeed; //default walk speed
-    public float cameraZoomIn; //camera zoomed y value
-    public float cameraDefaultZoom; //camera zoomed out value
+    
+    public float p_CameraZoomInY;
+    Vector3 CameraZoomIn;
+    public float p_CameraDefaultZoomY;
+    Vector3 CameraDefaultZoom;
+    public float p_CameraSpeed;
+    Vector3 CamTarget;
+
+    public float p_SprintSpeed;
+    public float p_BaseSpeed; 
+    float Speed; //difference in player Speed from base
+    float CurrentSpeed; 
+    float MoveDown = 0f; //velocity caused by p_Gravity
+    public float p_Gravity = 9.8f;
+    bool IsSprinting = false;
+    bool PlayerControlsCamera = true;
+
     public RectTransform UICanvas;
-    float cameraZoom; //current  camera y value
-    float speed; //difference in speed from base
-    float currentSpeed; //current speed value
-    float moveDown = 0f; //velocity caused by gravity
-    public float gravity = 9.8f;
-    Vector3 trans; //store shorthand refrence to this objects position
-    Transform SoundBounds; //store refrence to child object
+    Transform SoundBounds; 
     CharacterController cc;
     
     
@@ -26,14 +34,14 @@ public class PlayerMovment : MonoBehaviour {
     // Use this for initialization
     void Start ()
     {
-        trans = this.transform.position;
+        Vector3 trans = this.transform.position;
         SoundBounds = this.transform.GetChild(0);
         
-        Camera.main.transform.position = new Vector3(trans.x, trans.y + cameraDefaultZoom, trans.z);
+        Camera.main.transform.position = new Vector3(trans.x, trans.y + p_CameraDefaultZoomY, trans.z);
         Camera.main.transform.rotation = Quaternion.Euler(new Vector3(90, 0, 0));
 
-        cameraZoomIn = Camera.main.transform.position.y + cameraZoomIn;
-        cameraDefaultZoom = Camera.main.transform.position.y + cameraDefaultZoom;
+        p_CameraZoomInY = Camera.main.transform.position.y + p_CameraZoomInY;
+        p_CameraDefaultZoomY = Camera.main.transform.position.y + p_CameraDefaultZoomY;
 
         cc = this.GetComponent<CharacterController>();
     }
@@ -53,32 +61,46 @@ public class PlayerMovment : MonoBehaviour {
     void Update()
     {
         Vector3 camPos = Camera.main.transform.position;
-        trans = this.transform.position;
-        currentSpeed = speed + baseSpeed;
+        Debug.Log(camPos);
+        Vector3 trans = this.transform.position;
+        CurrentSpeed = Speed + p_BaseSpeed;  
+              
+        IsSprinting = Input.GetButton("sprint") ? true : false;
 
-        ApplyMovement();
-        AdjustSpeed();
+        if (IsSprinting == true)
+        { SprintSpeedAdjust(); SetCameraZoomIn(trans); }
+        else { WalkSpeedAdjust(); }
 
-        if (Input.GetButton("sprint"))
+        if (PlayerControlsCamera == true && IsSprinting == false)
         {
-            cameraZoom = cameraZoomIn;
-            if (speed < 1)
-            {
-                speed += .1f;
-            }
-        }else
-        { cameraZoom = cameraDefaultZoom; }       
-
-        
-        if (Input.GetButtonDown("Jump"))
-        {
-            SoundBounds.position = trans;
+            Debug.Log("test");
+            SetDefaultZoom(trans);
+            CamTarget = CameraDefaultZoom;
         }
+                   
+        ApplyMovement();
+        AdjustCamera(camPos, trans);
+
+        if (Input.GetButtonDown("Jump"))
+        {SoundBounds.position = trans;}
         else { SoundBounds.position = ResourceManager.OutOfBounds; }
 
-        Camera.main.transform.position = new Vector3(trans.x, AdjustCamera(camPos), trans.z);
+        
     }
 
+
+    void OnTriggerEnter(Collider col)
+    {
+        if (col.gameObject.tag == "CameraTrigger")
+        {
+            PlayerControlsCamera = false;
+            Vector3 target = col.transform.GetChild(2).transform.position;
+            CamTarget = target;
+        }
+        else {
+            PlayerControlsCamera = true;
+        }
+    }
 
     //---event functions-------------
 
@@ -98,37 +120,71 @@ public class PlayerMovment : MonoBehaviour {
 
         if (cc.isGrounded)
         {          
-            moveDown = 0;
+            MoveDown = 0;
         }
         else
         {
-            moveDown -= gravity * Time.deltaTime;
-            //moveHorizontal = 0;
-            //moveVertical = 0;
+            MoveDown -= p_Gravity * Time.deltaTime;
+
+            moveHorizontal = 0;
+            moveVertical = 0;
         }
         
-        Vector3 movement = new Vector3(moveHorizontal, moveDown, moveVertical);
-        cc.Move((movement * speed));
+        Vector3 movement = new Vector3(moveHorizontal, MoveDown, moveVertical);
+        cc.Move((movement * Speed));
     }
 
-    float AdjustCamera(Vector3 camPos)
-    {
-        if (cameraZoom == cameraZoomIn && camPos.y > cameraZoomIn)
-        { camPos.y -= .5f; }
-        if (cameraZoom == cameraDefaultZoom && camPos.y < cameraDefaultZoom)
-        { camPos.y += .5f; }
-        if (cameraZoom == cameraDefaultZoom && camPos.y > cameraDefaultZoom)
-        { camPos.y -= .5f; }
 
-        return camPos.y;
-        
+    void AdjustCamera(Vector3 camPos, Vector3 trans)
+    {
+        Debug.Log(camPos);
+        Vector3 velocity = (CamTarget - camPos).normalized * (CurrentSpeed);
+        if (camPos.magnitude < CamTarget.magnitude)
+        {
+            Debug.Log("magEqual");
+            //Camera.main.transform.position += velocity;   
+        }
+        Camera.main.transform.position = new Vector3(trans.x, camPos.y += velocity.y, trans.z);
+        return;        
     }
 
-    void AdjustSpeed()
+
+    void WalkSpeedAdjust()
     {
-        if (speed > baseSpeed)
-        { speed -= .1f; }
-        else if (speed < baseSpeed)
-        { speed = baseSpeed; }
+        if (Speed > p_BaseSpeed)
+        { Speed -= .1f; }
+        else if (Speed < p_BaseSpeed)
+        { Speed = p_BaseSpeed; }
+    }
+
+    void SprintSpeedAdjust()
+    {
+        if (Speed < p_SprintSpeed)
+        {
+            Speed += .1f;
+        }
+    }
+
+    void SetDefaultZoom(Vector3 trans)
+    {
+        CameraDefaultZoom.x = trans.x;
+        CameraDefaultZoom.y = p_CameraDefaultZoomY; 
+        CameraDefaultZoom.z = trans.z;
+
+        //Camera.main.transform.position = CameraDefaultZoom;
+        CamTarget = CameraDefaultZoom;
+    }
+
+    void SetCameraZoomIn(Vector3 trans)
+    {
+        CameraZoomIn.x = trans.x;
+        CameraZoomIn.y = p_CameraZoomInY; 
+        CameraZoomIn.z = trans.z;
+
+       
+
+        //Camera.main.transform.position = CameraZoomIn;
+
+        CamTarget = CameraZoomIn;
     }
 }
