@@ -68,7 +68,7 @@ public class PlayerMovment : MonoBehaviour {
         IsSprinting = Input.GetButton("sprint") ? true : false;
 
         if (IsSprinting == true)
-        { SprintSpeedAdjust(); SetCameraZoomIn(trans); }
+        { SprintSpeedAdjust(trans);}
         else { WalkSpeedAdjust(); }
 
         if (PlayerControlsCamera == true && IsSprinting == false)
@@ -158,12 +158,15 @@ public class PlayerMovment : MonoBehaviour {
         { Speed = p_BaseSpeed; }
     }
 
-    void SprintSpeedAdjust()
+    void SprintSpeedAdjust(Vector3 trans)
     {
         if (Speed < p_SprintSpeed)
         {
             Speed += .1f;
         }
+
+        if (PlayerControlsCamera == true)
+            SetCameraZoomIn(trans);
     }
 
     void SetDefaultZoom(Vector3 trans)
