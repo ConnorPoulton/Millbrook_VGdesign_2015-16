@@ -1,15 +1,44 @@
 fileFormatVersion: 2
-guid: b4f562ad9088bcf419346d7bf447b521
-timeCreated: 1450539899
+guid: 006b32cb097377840a4ca61b413d735b
+timeCreated: 1452287169
 licenseType: Free
 ModelImporter:
   serializedVersion: 18
   fileIDToRecycleName:
-    100000: //RootNode
-    400000: //RootNode
-    2300000: //RootNode
-    3300000: //RootNode
-    4300000: Cube
+    100000: base
+    100002: CamPos
+    100004: trigger
+    100006: //RootNode
+    100008: wall1
+    100010: wall2
+    100012: wall3
+    100014: wall4
+    400000: base
+    400002: CamPos
+    400004: trigger
+    400006: //RootNode
+    400008: wall1
+    400010: wall2
+    400012: wall3
+    400014: wall4
+    2300000: base
+    2300002: trigger
+    2300004: wall1
+    2300006: wall2
+    2300008: wall3
+    2300010: wall4
+    3300000: base
+    3300002: trigger
+    3300004: wall1
+    3300006: wall2
+    3300008: wall3
+    3300010: wall4
+    4300000: base
+    4300002: trigger
+    4300004: wall1
+    4300006: wall2
+    4300008: wall3
+    4300010: wall4
     7400000: Default Take
     9500000: //RootNode
   materials:
