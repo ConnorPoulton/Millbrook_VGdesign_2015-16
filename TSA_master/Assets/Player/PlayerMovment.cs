@@ -84,7 +84,12 @@ public class PlayerMovment : MonoBehaviour {
         {SoundBounds.position = trans;}
         else { SoundBounds.position = ResourceManager.OutOfBounds; }
 
-        
+        if (Input.GetKeyDown(KeyCode.Escape))
+        {
+            Application.Quit();
+        }
+
+
     }
 
 
@@ -97,7 +102,7 @@ public class PlayerMovment : MonoBehaviour {
             CamTarget = target;
         }
         else {
-            Debug.Log("test");
+
             PlayerControlsCamera = true;
         }
     }
