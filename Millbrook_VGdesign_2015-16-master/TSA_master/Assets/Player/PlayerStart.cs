@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using UnityEngine.UI;
 using System.Collections;
+using System.Collections.Generic;
 using TSA;
 
 public class PlayerStart : MonoBehaviour {
@@ -16,19 +17,22 @@ public class PlayerStart : MonoBehaviour {
     RectTransform canvas; //store refrence to instantiated canvas
     public float letterPause;
     public float TimeToLerp;
+    
     Text title;
     Text paragraph;
 
-    public int CameraStartZoom;
     public string LevelName;
     public string LevelDescription;
+    public GameObject Player;
 
     void Start()
     {
+        PlayerMovment playermovment = player.GetComponent<PlayerMovment>();
+
         Vector3 trans = this.transform.position;
         CameraStartPosition = Camera.main.transform.position;
         CameraStartRotation = Camera.main.transform.rotation;
-        CameraTargetPosition = new Vector3(trans.x, trans.y + CameraStartZoom, trans.z);
+        CameraTargetPosition = new Vector3(trans.x, trans.y + playermovment.p_CamZoomYFromPlayer, trans.z);
         CameraTargetRotation = Quaternion.Euler(new Vector3(90,0,0));    
         canvas = Instantiate(StartCanvas, StartCanvas.position, StartCanvas.rotation) as RectTransform;
         title = canvas.GetChild(0).GetComponent<Text>();
@@ -39,7 +43,7 @@ public class PlayerStart : MonoBehaviour {
         ResourceManager.playerFound += GameOver;
         ResourceManager.playerClearedLevel += LevelClear;
 
-        StartCoroutine(TextType()); //text type triggers LerpCamera, LerpCamera spawns player when complete
+        StartCoroutine(TextType(trans)); //text type triggers LerpCamera, LerpCamera spawns player when complete
     }
 
     void OnDisable()
@@ -59,7 +63,7 @@ public class PlayerStart : MonoBehaviour {
 
     }
 
-    public IEnumerator TextType()
+    public IEnumerator TextType(Vector3 trans)
     {
         foreach (char letter in LevelDescription.ToCharArray())
         {
@@ -79,13 +83,13 @@ public class PlayerStart : MonoBehaviour {
             yield return null;
 
         canvas.gameObject.SetActive(false);
-        StartCoroutine(LerpCamera()); 
+        StartCoroutine(LerpCamera(trans)); 
         yield break;
     }
 
 
 
-    public IEnumerator LerpCamera()
+    public IEnumerator LerpCamera(Vector3 trans)
     {
         float ElapsedTime = 0f;
 
@@ -93,6 +97,8 @@ public class PlayerStart : MonoBehaviour {
         {
             ElapsedTime += Time.deltaTime;
             float perc = (ElapsedTime / TimeToLerp);
+            float CamYOut = Camera.main.transform.position.y - trans.y;
+            CameraTargetPosition = ResourceManager.MakeCameraVecInBounds(CameraTargetPosition, CamYOut);
             Camera.main.transform.position = Vector3.Lerp(CameraStartPosition, CameraTargetPosition, perc);
             Camera.main.transform.rotation = Quaternion.Lerp(CameraStartRotation, CameraTargetRotation, perc);
             yield return new WaitForEndOfFrame();

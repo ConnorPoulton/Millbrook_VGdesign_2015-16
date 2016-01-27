@@ -1,39 +1,34 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using TSA;
 
 public class PlayerMovment : MonoBehaviour {
 
     
-    public float p_CameraZoomInY;
-    Vector3 CameraZoomIn;
-    public float p_CameraDefaultZoomY;
-    Vector3 CameraDefaultZoom;
+    public float p_CamZoomYFromPlayer;
+    float CamZoomY; //actual camera zoom based on player position
+    public float p_CamDefaultYFromPlayer;
+    float CamDefaultY;
     public float p_CameraDemoSpeed;
     public float p_CameraZoomSpeed;
+    float CamYTarget;
     Vector3 CamTarget;
-    Vector3 CamLLBound;
-    Vector3 CamUlBound;
-    Vector3 CamURBound;
-    Vector3 CamLRBound;
+    bool CamBoundToPlayer = true;
 
     public float p_SprintSpeed;
     public float p_BaseSpeed; 
-    float Speed; //difference in player Speed from base
-    float CurrentSpeed; 
+    float SpeedFromBase; //difference in player SpeedFromBase from base
+    float CurrentSpeed; // SpeedFromBase + baseSpeed
     float MoveDown = 0f; //velocity caused by p_Gravity
     public float p_Gravity = 9.8f;
     bool IsSprinting = false;
-    bool PlayerControlsCamera = true;
+    
 
     public RectTransform UICanvas;
     Transform SoundBounds; 
     CharacterController cc;
     
-    
-    /*TODO
-    expand functionality with statemachine
-    */
 
 
     // Use this for initialization
@@ -41,12 +36,11 @@ public class PlayerMovment : MonoBehaviour {
     {
         Vector3 trans = this.transform.position;
         SoundBounds = this.transform.GetChild(0);
-        
-        Camera.main.transform.position = new Vector3(trans.x, trans.y + p_CameraDefaultZoomY, trans.z);
-        Camera.main.transform.rotation = Quaternion.Euler(new Vector3(90, 0, 0));
 
-        p_CameraZoomInY = Camera.main.transform.position.y + p_CameraZoomInY;
-        p_CameraDefaultZoomY = Camera.main.transform.position.y + p_CameraDefaultZoomY;
+        CamDefaultY = this.transform.position.y + p_CamDefaultYFromPlayer;
+
+        Camera.main.transform.position = new Vector3(trans.x, CamDefaultY, trans.z);
+        Camera.main.transform.rotation = Quaternion.Euler(new Vector3(90, 0, 0));
 
         cc = this.GetComponent<CharacterController>();
     }
@@ -67,19 +61,13 @@ public class PlayerMovment : MonoBehaviour {
     {
         Vector3 camPos = Camera.main.transform.position;
         Vector3 trans = this.transform.position;
-        CurrentSpeed = Speed + p_BaseSpeed;  
+        CurrentSpeed = (SpeedFromBase + p_BaseSpeed);  
               
         IsSprinting = Input.GetButton("sprint") ? true : false;
 
         if (IsSprinting == true)
-        { SprintSpeedAdjust(trans);}
-        else { WalkSpeedAdjust(); }
-
-        if (PlayerControlsCamera == true && IsSprinting == false)
-        {
-            SetDefaultZoom(trans);
-            CamTarget = CameraDefaultZoom;
-        }
+        { SprintState(trans);}
+        else { WalkState(trans); }
                    
         ApplyMovement();
         AdjustCamera(camPos, trans);
@@ -101,13 +89,13 @@ public class PlayerMovment : MonoBehaviour {
     {
         if (col.gameObject.tag == "CameraTrigger")
         {
-            PlayerControlsCamera = false;
+            CamBoundToPlayer = false;
             Vector3 target = col.transform.parent.GetChild(1).transform.position;
             CamTarget = target;
         }
         else {
 
-            PlayerControlsCamera = true;
+            CamBoundToPlayer = true;
         }
     }
 
@@ -137,65 +125,73 @@ public class PlayerMovment : MonoBehaviour {
         }
         
         Vector3 movement = new Vector3(moveHorizontal, MoveDown, moveVertical);
-        cc.Move((movement * Speed));
+        cc.Move((movement * SpeedFromBase));
     }
 
 
     void AdjustCamera(Vector3 camPos, Vector3 trans)
     {
-        float camSpeed = 0;
         float zoomSpeed = 1;        
-        if (IsSprinting == false)
-            camSpeed = p_BaseSpeed;
-        if (IsSprinting == true)
-            camSpeed = p_SprintSpeed;
-        if (Mathf.RoundToInt(camPos.x) == Mathf.RoundToInt(trans.x)) //check to see if camera is bound to player         
+        if (CamBoundToPlayer == true)          
             zoomSpeed = p_CameraZoomSpeed;
+        
 
-        Vector3 velocity = (CamTarget - camPos) * (camSpeed);
-        Vector3 camtarget = camPos += new Vector3(velocity.x, ((velocity.y) * (zoomSpeed)), velocity.z); 
-        camtarget = ResourceManager.MakeCameraVecInBounds(camtarget);
-
-        Camera.main.transform.position = camtarget;        
+        Vector3 velocity = ((CamTarget - camPos));     
+        Vector3 newcampos = camPos += new Vector3(velocity.x, ((velocity.y) * (zoomSpeed)), velocity.z);
+        if (CamBoundToPlayer == true)
+        {
+            float CamYOut = Mathf.Abs(camPos.y - trans.y);
+            newcampos = ResourceManager.MakeCameraVecInBounds(newcampos, CamYOut);
+        }
+            
+        Camera.main.transform.position = newcampos;        
         return;        
     }
 
 
-    void WalkSpeedAdjust()
+    void WalkState(Vector3 trans)
     {
-        if (Speed > p_BaseSpeed)
-        { Speed -= .1f; }
-        else if (Speed < p_BaseSpeed)
-        { Speed = p_BaseSpeed; }
+        if (SpeedFromBase > p_BaseSpeed)
+        { SpeedFromBase -= .1f; }
+        else if (SpeedFromBase < p_BaseSpeed)
+        { SpeedFromBase = p_BaseSpeed; }
+
+        if (CamBoundToPlayer == true)
+            SetCameraDefaultZoom(trans);
     }
 
-    void SprintSpeedAdjust(Vector3 trans)
+    void SprintState(Vector3 trans)
     {
-        if (Speed < p_SprintSpeed)
-        {
-            Speed += .1f;
-        }
-
-        if (PlayerControlsCamera == true)
+        if (SpeedFromBase < p_SprintSpeed)        
+            SpeedFromBase += .1f;
+        
+        if (CamBoundToPlayer == true)
             SetCameraZoomIn(trans);
     }
 
-    void SetDefaultZoom(Vector3 trans)
+    void SetCameraDefaultZoom(Vector3 trans)
     {
-        CameraDefaultZoom.x = trans.x;
-        CameraDefaultZoom.y = p_CameraDefaultZoomY; 
-        CameraDefaultZoom.z = trans.z;
-
-        CamTarget = CameraDefaultZoom;
+        CamYTarget = p_CamDefaultYFromPlayer;
+        CamDefaultY = CamYTarget + trans.y;
+        Debug.Log(p_CamDefaultYFromPlayer);       
+        CamTarget = new Vector3(
+            trans.x,
+            CamDefaultY,
+            trans.z
+            );
     }
 
     void SetCameraZoomIn(Vector3 trans)
     {
-        CameraZoomIn.x = trans.x;
-        CameraZoomIn.y = p_CameraZoomInY; 
-        CameraZoomIn.z = trans.z;
-
-        CamTarget = CameraZoomIn;
+        CamYTarget = p_CamZoomYFromPlayer;
+        CamZoomY = CamYTarget + trans.y;        
+        CamTarget = new Vector3(
+            trans.x,
+            CamZoomY,
+            trans.z
+            );
     }
+
+    
 
 }

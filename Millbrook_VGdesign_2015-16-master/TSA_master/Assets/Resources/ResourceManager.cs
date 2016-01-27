@@ -31,26 +31,39 @@ namespace TSA
                 playerClearedLevel();
         }
 
-        public static Vector3 MakeCameraVecInBounds(Vector3 target)
+        public static Vector3 MakeCameraVecInBounds(Vector3 target, float camzoom)
         {
-            float CamXOffSet = 0;
-            float CamZOffSet = 0;
+    
+            Vector3 CamURBound = Camera.main.ViewportToWorldPoint(new Vector3(1, 1, camzoom));
+            Vector3 CamLLBounds = Camera.main.ViewportToWorldPoint(new Vector3(0, 0, camzoom));
 
-            Vector3 CamLLBound = Camera.main.ViewportToWorldPoint(new Vector3(0, target.y, 0));
-            Vector3 CamURBound = Camera.main.ViewportToWorldPoint(new Vector3(1, target.y, 1));
+            float CamXOffSet = (Mathf.Abs(CamURBound.x - CamLLBounds.x) / 2);
+            float CamZOffSet = (Mathf.Abs(CamURBound.z - CamLLBounds.z) / 2);
+            
+            float ZMin = ResourceManager.SceneLLBounds.z + CamZOffSet;
+            float ZMax = ResourceManager.SceneURBounds.z - CamZOffSet;
+            float XMax = ResourceManager.SceneURBounds.x - CamXOffSet;
+            float XMin = ResourceManager.SceneLLBounds.x + CamXOffSet;
+            /*            
+            float ZMin = ResourceManager.SceneLLBounds.z + 3;
+            float ZMax = ResourceManager.SceneURBounds.z - 3;
+            float XMax = ResourceManager.SceneURBounds.x - 3;
+            float XMin = ResourceManager.SceneLLBounds.x + 3;
+            */
 
-            CamXOffSet = Mathf.Abs(CamLLBound.x / 2); //gets distance in world space from edge of camera view to camera origin
-            CamZOffSet = Mathf.Abs(CamLLBound.z / 2);
-
-            float ZMin = ResourceManager.SceneLLBounds.z + 8;
-            float ZMax = ResourceManager.SceneURBounds.z - 8;
-            float XMax = ResourceManager.SceneURBounds.x - 8;
-            float XMin = ResourceManager.SceneLLBounds.x - 8;
+            //Debug.Log(ZMin);
+            //Debug.Log(ZMax);
+            
 
             target.x = (target.x < XMin) ? XMin : (target.x > XMax) ? XMax : target.x;
             target.z = (target.z < ZMin) ? ZMin : (target.z > ZMax) ? ZMax : target.z;
+            
+            
 
             return target;
         }
+
     }
+
+    
 }
